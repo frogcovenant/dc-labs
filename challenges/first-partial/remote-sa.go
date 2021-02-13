@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"math"
 )
 
 type Point struct {
@@ -45,14 +46,22 @@ func generatePoints(s string) ([]Point, error) {
 
 // getArea gets the area inside from a given shape
 func getArea(points []Point) float64 {
-	// Your code goes here
-	return 0.0
+	area := 0.0
+	points = append(points, points[0]) //add last point to array
+	for i := 0; i < len(points)-1; i++{
+		area += ((points[i].Y + points[i+1].Y)/2) * (points[i+1].X-points[i].X)
+	}
+	return (math.Round(area*10)/10)
 }
 
 // getPerimeter gets the perimeter from a given array of connected points
 func getPerimeter(points []Point) float64 {
-	// Your code goes here
-	return 0.0
+	perimeter := 0.0
+	points = append(points, points[0]) //add last point to array
+	for i := 0; i < len(points)-1; i++{
+		perimeter += math.Sqrt(math.Pow((points[i+1].X-points[i].X),2)+math.Pow((points[i+1].Y-points[i].Y),2))
+	}
+	return (math.Round(perimeter*10)/10)
 }
 
 // handler handles the web request and reponds it
@@ -82,8 +91,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	response := fmt.Sprintf("Welcome to the Remote Shapes Analyzer\n")
 	response += fmt.Sprintf(" - Your figure has : [%v] vertices\n", len(vertices))
 	response += fmt.Sprintf(" - Vertices        : %v\n", vertices)
-	response += fmt.Sprintf(" - Perimeter       : %v\n", perimeter)
-	response += fmt.Sprintf(" - Area            : %v\n", area)
+	if len(vertices) > 2{
+		response += fmt.Sprintf(" - Perimeter       : %v\n", perimeter)
+		response += fmt.Sprintf(" - Area            : %v\n", area)
+	}else{
+		response += fmt.Sprintf(" - ERROR - Your shape is not compliying with the minimum number of vertices.\n")
+	}
 
 	// Send response to client
 	fmt.Fprintf(w, response)
