@@ -2,25 +2,35 @@
 package main
 
 import (
+	"flag"
 	"io"
 	"log"
 	"net"
+	"os"
 	"time"
 )
 
-func handleConn(c net.Conn) {
+func handleConn(c net.Conn, timeZone string) {
 	defer c.Close()
 	for {
-		_, err := io.WriteString(c, time.Now().Format("15:04:05\n"))
-		if err != nil {
-			return // e.g., client disconnected
+		location, errZ := time.LoadLocation(timeZone)
+		if errZ != nil {
+			return // e.g., timezone not parsed correctly :(
+		}
+		_, errW := io.WriteString(c, timeZone+"\t : "+time.Now().In(location).Format("15:04:05\n"))
+		if errW != nil {
+			return // e.g., client disconnected :(
 		}
 		time.Sleep(1 * time.Second)
 	}
 }
 
 func main() {
-	listener, err := net.Listen("tcp", "localhost:9090")
+	timeZone := os.Getenv("TZ")
+	port := flag.String("port", "4200", "This is used for the port number")
+	flag.Parse()
+
+	listener, err := net.Listen("tcp", "localhost:"+*port)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -30,6 +40,6 @@ func main() {
 			log.Print(err) // e.g., connection aborted
 			continue
 		}
-		go handleConn(conn) // handle connections concurrently
+		go handleConn(conn, timeZone) // handle connections concurrently
 	}
 }
